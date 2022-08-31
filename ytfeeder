@@ -19,8 +19,8 @@ OPML=0              # Whether to output as opml
 #   $1: Takeout csv location                                #
 # --------------------------------------------------------- #
 getChannelIDs() {
-  if [ -f $1 ] && [ -r $1 ]; then
-    echo $(cat "$1" | sed -E '1d; s/(,.+)/ /')
+  if [ -f "$1" ] && [ -r "$1" ]; then
+    sed -E '1d; s/(,.+)/ /' < "$1"
   fi
 }
 
@@ -31,25 +31,28 @@ getChannelIDs() {
 #   $1: Youtube channel IDs, separated by spaces            #
 # --------------------------------------------------------- #
 toRSSYoutube() {
-  until [ -z $1 ]; do
+  until [ -z "$1" ]; do
     echo "https://youtube.com/feeds/videos.xml?channel_id=$1"
     shift
   done
 }
 
-
 # --------------------------------------------------------- #
 # toChannels ()                                             #
-# Echo channels from takeout csv that                       # 
+# Echo channels from takeout csv that                       #
 # can be easily splitted                                    #
 # Parameter:                                                #
 #   $1: Takeout csv location                                #
 # --------------------------------------------------------- #
 toChannels() {
-  local CHANNELS="$(cat "$1" | sed -E '1d')"
-  for CHANNEL in "$CHANNELS"; do
-    echo "$CHANNELS"
+  local CHANNELS=''
+  CHANNELS=$(sed -E '1d' "$1")
+
+  IFS=$'\n'
+  for CHANNEL in $CHANNELS; do
+    echo "$CHANNEL"
   done
+  unset IFS
 }
 
 # --------------------------------------------------------- #
@@ -58,14 +61,15 @@ toChannels() {
 # and row (separated by newlines)                           #
 # !!! Starts at 1, not 0 !!!                                #
 # Parameter:                                                #
-#   $1: Row                                                 #    
+#   $1: Row                                                 #
 #   $2: Column                                              #
 #   $3: CSV                                                 #
 # --------------------------------------------------------- #
 getValFromCSV() {
   IFS=','
-  local ROW=($(echo "$3" | sed -n "$1p"))
-  echo ${ROW[$2-1]}
+  local ROW=""
+  ROW=($(echo "$3" | sed -n "$1p"))
+  echo "${ROW[$2 - 1]}"
   unset IFS
 }
 
@@ -78,12 +82,12 @@ getValFromCSV() {
 toOPML() {
   local OUTLINES=''
   IFS=$'\n'
-  for CHANNEL in $(toChannels $1); do
+  for CHANNEL in $(toChannels "$1"); do
     local C_NAME=''
     local C_ID=''
     C_NAME="$(getValFromCSV 1 3 "$CHANNEL")"
     C_ID="$(getValFromCSV 1 1 "$CHANNEL")"
-    OUTLINES+="<outline text="\"$C_NAME\"" title="\"$C_NAME\"" xmlUrl=\""$(toRSSYoutube $C_ID)\"" />"
+    OUTLINES+="<outline text="\"$C_NAME\"" title="\"$C_NAME\"" xmlUrl=\""$(toRSSYoutube "$C_ID")\"" />"
   done
   unset IFS
 
@@ -93,14 +97,15 @@ toOPML() {
   <title>YouTube Subscriptions</title>
 </head>
   <body>
-$OUTLINES
+%s
   </body>
 </opml>
-"
+" \
+"$OUTLINES"
 }
 
-if [ ! -z $1 ]; then
-  until [ -z $1 ]; do
+if [ -n "$1" ]; then
+  until [ -z "$1" ]; do
     case $1 in
     '-i' | '--input')
       TAKEOUT_LOCATION="$2"
@@ -120,10 +125,10 @@ if [ ! -z $1 ]; then
       ;;
     esac
   done
-  if [  "$OPML" -ne '0' ]; then
-    toOPML $TAKEOUT_LOCATION
-  else 
-    toRSSYoutube $(getChannelIDs $TAKEOUT_LOCATION)
+  if [ "$OPML" -ne '0' ]; then
+    toOPML "$TAKEOUT_LOCATION"
+  else
+    toRSSYoutube "$(getChannelIDs "$TAKEOUT_LOCATION")"
   fi
 else
   echo "Help"
