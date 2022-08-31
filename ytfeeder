@@ -11,28 +11,31 @@
 
 
 TAKEOUT_LOCATION=''   # Youtube takeout location
-CHANNEL_IDS=''        # 
-FRONTEND=''
+FRONTEND=''           # TODO: Support alternative frontends
 
 # --------------------------------------------------------- #
-# setChannelIDs ()                                          #
-# Set $CHANNEL_IDS by looking through $TAKEOUT_LOCATION     #
-# Parameter: $TAKEOUT_LOCATION                              # 
+# getChannelIDs ()                                          #
+# Echo channel IDs separated by spaces by                   # 
+# looking through $TAKEOUT_LOCATION                         #
+# Parameter:                                                #
+#   $1: Takeout csv location                                # 
 # --------------------------------------------------------- #
-setChannelIDs() {
-  if [ -f $TAKEOUT_LOCATION ] && [ -r $TAKEOUT_LOCATION ]; then
-    CHANNEL_IDS="$(cat "$TAKEOUT_LOCATION" | sed -E '1d; s/(,.+)/ /')"
+getChannelIDs() {
+  if [ -f $1 ] && [ -r $1 ]; then
+    echo $(cat "$1" | sed -E '1d; s/(,.+)/ /')
   fi
 }
 
 # --------------------------------------------------------- #
 # toRSSYoutube ()                                           #
 # Echos youtube RSS feeds                                   #
-# Parameter: $target_directory                              #
+# Parameter:                                                #
+#   $1: Youtube channel IDs, separated by spaces            #
 # --------------------------------------------------------- #
 toRSSYoutube() {
-  for ID in $CHANNEL_IDS; do
-    echo "https://youtube.com/feeds/videos.xml?channel_id=$ID"
+  until [ -z $1 ]; do
+    echo "https://youtube.com/feeds/videos.xml?channel_id=$1"
+    shift
   done
 }
 
@@ -53,8 +56,7 @@ if [ ! -z $1 ]; then
       ;;
     esac
   done
-  setChannelIDs
-  toRSSYoutube
+  toRSSYoutube $(getChannelIDs $TAKEOUT_LOCATION)
 else
   echo "Help"
 fi
