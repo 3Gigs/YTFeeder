@@ -1,18 +1,35 @@
 #!/bin/sh
 
-# Simple script for converting a YouTube takeout subscription csv to
-# a RSS feed
 
-TAKEOUT_LOCATION=''
-CHANNEL_IDS=''
+#************************************************#
+#                 ytfeeder.sh                    #
+#                                                #
+#           Convert youtube takeout CSVs         #
+#           to RSS                               #
+#************************************************#
+
+
+
+TAKEOUT_LOCATION=''   # Youtube takeout location
+CHANNEL_IDS=''        # 
 FRONTEND=''
 
+# --------------------------------------------------------- #
+# setChannelIDs ()                                          #
+# Set $CHANNEL_IDS by looking through $TAKEOUT_LOCATION     #
+# Parameter: $TAKEOUT_LOCATION                              # 
+# --------------------------------------------------------- #
 setChannelIDs() {
   if [ -f $TAKEOUT_LOCATION ] && [ -r $TAKEOUT_LOCATION ]; then
     CHANNEL_IDS="$(cat "$TAKEOUT_LOCATION" | sed -E '1d; s/(,.+)/ /')"
   fi
 }
 
+# --------------------------------------------------------- #
+# toRSSYoutube ()                                           #
+# Echos youtube RSS feeds                                   #
+# Parameter: $target_directory                              #
+# --------------------------------------------------------- #
 toRSSYoutube() {
   for ID in $CHANNEL_IDS; do
     echo "https://youtube.com/feeds/videos.xml?channel_id=$ID"
