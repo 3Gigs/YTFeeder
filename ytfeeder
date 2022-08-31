@@ -45,7 +45,6 @@ toRSSYoutube() {
 #   $1: Takeout csv location                                #
 # --------------------------------------------------------- #
 toChannels() {
-<<<<<<< HEAD
   local CHANNELS=''
   CHANNELS=$(sed -E '1d' "$1")
 
@@ -54,9 +53,6 @@ toChannels() {
     echo "$CHANNEL"
   done
   unset IFS
-=======
-  sed -E '1d' "$1"
->>>>>>> 723b974c7b18c80c5ef06479c3363cf9e4cc43e6
 }
 
 # --------------------------------------------------------- #
@@ -72,11 +68,7 @@ toChannels() {
 getValFromCSV() {
   IFS=','
   local ROW=""
-<<<<<<< HEAD
   ROW=($(echo "$3" | sed -n "$1p"))
-=======
-  ROW="($(echo "$3" | sed -n "$1p"))"
->>>>>>> 723b974c7b18c80c5ef06479c3363cf9e4cc43e6
   echo "${ROW[$2 - 1]}"
   unset IFS
 }
@@ -95,7 +87,8 @@ toOPML() {
     local C_ID=''
     C_NAME="$(getValFromCSV 1 3 "$CHANNEL")"
     C_ID="$(getValFromCSV 1 1 "$CHANNEL")"
-    OUTLINES+="<outline text="\"$C_NAME\"" title="\"$C_NAME\"" xmlUrl=\""$(toRSSYoutube "$C_ID")\"" />"
+    OUTLINES+="<outline type=\"rss\" text="\"$C_NAME\"" title="\"$C_NAME\"" xmlUrl=\""$(toRSSYoutube "$C_ID")\"" />'"
+    OUTLINES+=$'\n'
   done
   unset IFS
 
