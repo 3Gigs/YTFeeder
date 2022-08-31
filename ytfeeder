@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 #************************************************#
 #                 ytfeeder.sh                    #
 #                                                #
@@ -8,17 +7,16 @@
 #           to RSS                               #
 #************************************************#
 
-
-
-TAKEOUT_LOCATION=''   # Youtube takeout location
-FRONTEND=''           # TODO: Support alternative frontends
+TAKEOUT_LOCATION='' # Youtube takeout location
+FRONTEND=''         # TODO: Support alternative frontends
+OPML=0              # Whether to output as opml
 
 # --------------------------------------------------------- #
 # getChannelIDs ()                                          #
-# Echo channel IDs separated by spaces by                   # 
+# Echo channel IDs separated by spaces by                   #
 # looking through $TAKEOUT_LOCATION                         #
 # Parameter:                                                #
-#   $1: Takeout csv location                                # 
+#   $1: Takeout csv location                                #
 # --------------------------------------------------------- #
 getChannelIDs() {
   if [ -f $1 ] && [ -r $1 ]; then
@@ -39,6 +37,33 @@ toRSSYoutube() {
   done
 }
 
+# --------------------------------------------------------- #
+# toOPML ()                                                 #
+# Echos an OPML subscription list                           #
+# Parameter:                                                #
+#   $1: RSS subscriptions, separated by newlines            #
+# --------------------------------------------------------- #
+toOPML() {
+  local OUTLINES=''
+
+  until [ -z $2 ]; do
+    OUTLINES+="    <outline xmlUrl=\"$1\" />\n"
+    shift
+  done
+  OUTLINES+="    <outline xmlUrl=\"$1\" />"
+
+  printf \
+    "<opml version=\"2.0\">
+<head>
+  <title>YouTube Subscriptions</title>
+</head>
+  <body>
+$OUTLINES
+  </body>
+</opml>
+"
+}
+
 if [ ! -z $1 ]; then
   until [ -z $1 ]; do
     case $1 in
@@ -46,9 +71,13 @@ if [ ! -z $1 ]; then
       TAKEOUT_LOCATION="$2"
       shift 2
       ;;
-    '--front-end')
+    '-f' | '--front-end')
       FRONTEND="$2"
       shift 2
+      ;;
+    '-O' | '--opml')
+      OPML=1
+      shift 1
       ;;
     *)
       echo >&2 "Unknown argument"
@@ -56,7 +85,11 @@ if [ ! -z $1 ]; then
       ;;
     esac
   done
-  toRSSYoutube $(getChannelIDs $TAKEOUT_LOCATION)
+  if [  "$OPML" -ne '0' ]; then
+    toOPML $(toRSSYoutube $(getChannelIDs $TAKEOUT_LOCATION))
+  else 
+    toRSSYoutube $(getChannelIDs $TAKEOUT_LOCATION)
+  fi
 else
   echo "Help"
 fi
