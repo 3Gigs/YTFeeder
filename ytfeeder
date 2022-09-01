@@ -66,11 +66,20 @@ toChannels() {
 #   $3: CSV                                                 #
 # --------------------------------------------------------- #
 getValFromCSV() {
-  IFS=','
   local ROW=""
-  ROW=($(echo "$3" | sed -n "$1p"))
-  echo "${ROW[$2 - 1]}"
-  unset IFS
+  local COUNTER=1
+  local CSV=''
+  CSV="$(sed -E 's/"(.*)(,)(.*)"/\1\&quot;\3/' <<< "$3")"
+  ROW=$(echo "$CSV" | sed -n "$1p") # TODO: Change this so it doesn't add unnecessary quotes
+  IFS=','
+  for VAL in $ROW; do
+    if [ "$2" -eq "$COUNTER" ]; then
+      sed 's/\&quot;/,/' <<< "$VAL"
+      break
+    else
+      ((COUNTER++))
+    fi
+  done
 }
 
 # --------------------------------------------------------- #
@@ -85,9 +94,9 @@ toOPML() {
   for CHANNEL in $(toChannels "$1"); do
     local C_NAME=''
     local C_ID=''
-    C_NAME="$(getValFromCSV 1 3 "$CHANNEL")"
+    C_NAME="$(sed -E 's/"(.+)"/\1/ ; s/\"+/\&quot;/g' <<< "$(getValFromCSV 1 3 "$CHANNEL")")"
     C_ID="$(getValFromCSV 1 1 "$CHANNEL")"
-    OUTLINES+="<outline type=\"rss\" text="\"$C_NAME\"" title="\"$C_NAME\"" xmlUrl=\""$(toRSSYoutube "$C_ID")\"" />'"
+    OUTLINES+="<outline type='rss' text=\"$C_NAME\" title=\"$C_NAME\" xmlUrl=\"$(toRSSYoutube "$C_ID")\" />"
     OUTLINES+=$'\n'
   done
   unset IFS
@@ -128,6 +137,7 @@ if [ -n "$1" ]; then
   done
   if [ "$OPML" -ne '0' ]; then
     toOPML "$TAKEOUT_LOCATION"
+    #getValFromCSV 298 3 "$(cat "$TAKEOUT_LOCATION")"
   else
     toRSSYoutube "$(getChannelIDs "$TAKEOUT_LOCATION")"
   fi
